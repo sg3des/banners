@@ -99,6 +99,29 @@ func appendBanner(b *Banner) {
 	banners.count++
 }
 
+func removeBanner(b *Banner) {
+	banners.Lock()
+	for _, cat := range b.Categories {
+		list := banners.categories[cat]
+
+		for i, ban := range list {
+			if ban == b {
+				list[i] = list[len(list)-1]
+				list = list[:len(list)-1]
+
+				if len(list) == 0 {
+					delete(banners.categories, cat)
+				} else {
+					banners.categories[cat] = list
+				}
+
+				break
+			}
+		}
+	}
+	banners.Unlock()
+}
+
 //LookupBanner lookup banner by category, return nil,false if banner with count > 0 not found
 func LookupBanner(categories []string) (b *Banner, ok bool) {
 	category, ok := LookupCategory(categories)
@@ -119,23 +142,11 @@ func LookupBanner(categories []string) (b *Banner, ok bool) {
 	b = list[i]
 	b.Count--
 	if b.Count == 0 {
-		removeBanner(category, list, i)
+		removeBanner(b)
 	}
 	ok = true
 
 	return
-}
-
-func removeBanner(cat string, list []*Banner, i int) {
-	banners.Lock()
-	list[i] = list[len(list)-1]
-	list = list[:len(list)-1]
-	if len(list) == 0 {
-		delete(banners.categories, cat)
-	} else {
-		banners.categories[cat] = list
-	}
-	banners.Unlock()
 }
 
 //GetCount returned total count of banners in rotation
