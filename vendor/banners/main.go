@@ -1,53 +1,76 @@
 package main
 
 import (
+	"banners/banners"
+	"banners/storage"
 	"fmt"
 	"log"
 	"net/http"
-
-	"banners/storage"
 
 	"github.com/gorilla/schema"
 	"github.com/sg3des/argum"
 )
 
+var bs storage.Storage
+
+//Args is global struct contains current configuration
 var args struct {
-	Config string `argum:"--config" help:"path to configuration file, toml format"`
-	Debug  bool   `argum:"--debug" help:"enable debug mode"`
+	Config string `toml:"-" argum:"-c,--config" help:"path to configuration file, toml format`
+	Debug  bool   `toml:"debug" argum:"-d,--debug" help:"enable debug mode"`
+
+	HTTPAddr     string `toml:"http-addr" help:"listening address"`
+	CSVFile      string `toml:"csv-file" help:"path to file with banners, CSV format"`
+	CSVSeparator string `toml:"csv-separator" help:"field seperator" default:";"`
+	StorageType  string `toml:"storage-type" argum:"lock|chan|slice" help:"select mechanism type of storage"`
 }
 
 func init() {
-	argum.Version = "0.1.a171128"
+	argum.Version = "0.2.a171205"
 	argum.MustParse(&args)
 
 	if args.Debug {
 		log.SetFlags(log.Lshortfile)
 	}
-}
 
-func main() {
-	if args.Debug {
-		fmt.Println("Load configuragion")
-	}
 	if err := LoadConfig(args.Config); err != nil {
 		log.Fatalln(err)
 	}
 
-	if args.Debug {
-		fmt.Println("Load banners from:", Config.CSVFile)
-	}
-	if err := storage.LoadBanners(Config.CSVFile, Config.CSVSeparator); err != nil {
-		log.Fatalln(err)
-	}
-	if args.Debug {
-		fmt.Println("Loaded", storage.GetCount())
+	//overwrite values config values with arguments
+	argum.MustParse(&args)
+}
+
+func main() {
+	debugOutput("Initialize storage:", args.StorageType)
+	switch args.StorageType {
+	case "chan":
+		bs = storage.NewChanStorage()
+	case "lock":
+		bs = storage.NewLockStorage()
+	case "slice":
+		bs = storage.NewSliceStorage()
+	default:
+		log.Fatalln("unexpected storage type")
 	}
 
-	if args.Debug {
-		fmt.Println("Enable web server on:", Config.HTTPAddr)
-	}
-	if err := enableServer(Config.HTTPAddr); err != nil {
+	debugOutput("Load banners from:", args.CSVFile)
+	if err := banners.LoadBanners(args.CSVFile, args.CSVSeparator, bs.AppendBanner); err != nil {
 		log.Fatalln(err)
+	}
+	debugOutput("Loaded banners:", bs.GetCount())
+
+	debugOutput("Enable web server on:", args.HTTPAddr)
+	if err := enableServer(args.HTTPAddr); err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func debugOutput(ss ...interface{}) {
+	if args.Debug {
+		for _, s := range ss {
+			fmt.Print(s, " ")
+		}
+		fmt.Println()
 	}
 }
 
@@ -74,7 +97,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, ok := storage.LookupBanner(req.Categories)
+	b, ok := bs.LookupBanner(req.Categories)
 	if !ok {
 		err = fmt.Errorf("banner not found")
 		log.Println(err)
@@ -82,13 +105,11 @@ func index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if args.Debug {
-		log.Println("request banner by", r.RemoteAddr, b.URL, b.Count)
-	}
+	debugOutput("request banner by", r.RemoteAddr, b.URL, b.Count)
 
 	fmt.Fprintf(w, "<!DOCTYPE html><img src='%s' width=200>", b.URL)
 }
 
 func reload(w http.ResponseWriter, r *http.Request) {
-	storage.LoadBanners(Config.CSVFile, Config.CSVSeparator)
+	banners.LoadBanners(args.CSVFile, args.CSVSeparator, bs.AppendBanner)
 }

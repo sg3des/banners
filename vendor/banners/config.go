@@ -9,13 +9,6 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-//Config is global struct contains current configuration
-var Config struct {
-	HTTPAddr     string `toml:"http-addr"`
-	CSVFile      string `toml:"csv-file"`
-	CSVSeparator string `toml:"csv-separator"`
-}
-
 func findConfigFile() string {
 	files := []string{
 		filepath.Join("testdata", "banners.conf"),
@@ -45,7 +38,7 @@ func LoadConfig(filename string) error {
 
 	setDefaultValues()
 
-	_, err := toml.DecodeFile(filename, &Config)
+	_, err := toml.DecodeFile(filename, &args)
 	if err != nil {
 		return fmt.Errorf("failed load configuration from file '%s', reason: %s", filename, err)
 	}
@@ -54,7 +47,16 @@ func LoadConfig(filename string) error {
 }
 
 func setDefaultValues() {
-	Config.HTTPAddr = ":80"
-	Config.CSVFile = "banners.csv"
-	Config.CSVSeparator = ";"
+	if args.HTTPAddr == "" {
+		args.HTTPAddr = ":80"
+	}
+	if args.CSVFile == "" {
+		args.CSVFile = "banners.csv"
+	}
+	if args.CSVSeparator == "" {
+		args.CSVSeparator = ";"
+	}
+	if args.StorageType == "" {
+		args.StorageType = "chan"
+	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"banners/banners"
 	"banners/storage"
 	"net/http"
 	"testing"
@@ -10,7 +11,9 @@ import (
 var testaddr = "127.0.0.1:8090"
 
 func init() {
-	storage.LoadBanners("storage/testdata/banners.csv", ";")
+	bs = storage.NewChanStorage()
+
+	banners.LoadBanners("storage/testdata/banners.csv", ";", bs.AppendBanner)
 }
 
 func TestEnableServer(t *testing.T) {
@@ -62,4 +65,61 @@ func TestIndexInvalid(t *testing.T) {
 		}
 	}
 
+}
+
+//
+//benchmarks
+
+func benchmarkStorage(b *testing.B, categories []string) {
+	banners.LoadBanners("storage/testdata/banners.csv", ";", bs.AppendBanner)
+
+	b.StartTimer()
+	for n := 0; n < b.N; n++ {
+		bs.LookupBanner(categories)
+	}
+}
+
+func BenchmarkLockStorage(b *testing.B) {
+	b.StopTimer()
+	bs = storage.NewLockStorage()
+	categories := []string{"flight", "onlycategory"}
+
+	benchmarkStorage(b, categories)
+}
+
+func BenchmarkLockStorage2(b *testing.B) {
+	b.StopTimer()
+	bs = storage.NewLockStorage()
+
+	benchmarkStorage(b, nil)
+}
+
+func BenchmarkChanStorage(b *testing.B) {
+	b.StopTimer()
+	bs = storage.NewChanStorage()
+	categories := []string{"flight", "onlycategory"}
+
+	benchmarkStorage(b, categories)
+}
+
+func BenchmarkChanStorage2(b *testing.B) {
+	b.StopTimer()
+	bs = storage.NewChanStorage()
+
+	benchmarkStorage(b, nil)
+}
+
+func BenchmarkSliceStorage(b *testing.B) {
+	b.StopTimer()
+	bs = storage.NewSliceStorage()
+	categories := []string{"flight", "onlycategory"}
+
+	benchmarkStorage(b, categories)
+}
+
+func BenchmarkSliceStorage2(b *testing.B) {
+	b.StopTimer()
+	bs = storage.NewSliceStorage()
+
+	benchmarkStorage(b, nil)
 }
