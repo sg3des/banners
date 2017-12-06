@@ -1,4 +1,4 @@
-#Banners
+# Banners
 
 Banner structure:
 
@@ -19,9 +19,9 @@ type Banner struct {
 ```
 
 
-##Storage mechanisms
+## Storage mechanisms
 
-###Lock storage
+### Lock storage
 
 ```go
 type LockStorage struct {
@@ -35,7 +35,7 @@ On input requests lock `categories` map.
 If display count of banner is zero, removed it from all categories.
 
 
-###Tree storage
+### Tree storage
 
 ```go
 type TreeStorage struct {
@@ -59,7 +59,7 @@ Banners, with over display count, not removed.
 Appending banner by category, (where category is key), each byte in a key added new branch to tree. Looking for banner by categories, performing by same method.
 
 
-###Slice storage
+### Slice storage
 
 ```go
 type SliceStorage struct {
@@ -71,7 +71,7 @@ It is very simple storage - all banners are contained in one slice, without cate
 To find a random element from slice, generate random number less then length of slice and lookup at first from this number to end, and then from start to this number.
 
 
-##Benchmarks
+## Benchmarks
 
 	BenchmarkLockStorage-8      	10000000	       153 ns/op
 	BenchmarkLockStorageAny-8    	10000000	       194 ns/op
