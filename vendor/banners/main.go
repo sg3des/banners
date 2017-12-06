@@ -43,8 +43,8 @@ func init() {
 func main() {
 	debugOutput("Initialize storage:", args.StorageType)
 	switch args.StorageType {
-	case "chan":
-		bs = storage.NewChanStorage()
+	case "tree":
+		bs = storage.NewTreeStorage()
 	case "lock":
 		bs = storage.NewLockStorage()
 	case "slice":

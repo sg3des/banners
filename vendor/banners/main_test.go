@@ -11,7 +11,7 @@ import (
 var testaddr = "127.0.0.1:8090"
 
 func init() {
-	bs = storage.NewChanStorage()
+	bs = storage.NewTreeStorage()
 
 	banners.LoadBanners("storage/testdata/banners.csv", ";", bs.AppendBanner)
 }
@@ -87,24 +87,24 @@ func BenchmarkLockStorage(b *testing.B) {
 	benchmarkStorage(b, categories)
 }
 
-func BenchmarkLockStorage2(b *testing.B) {
+func BenchmarkLockStorageAny(b *testing.B) {
 	b.StopTimer()
 	bs = storage.NewLockStorage()
 
 	benchmarkStorage(b, nil)
 }
 
-func BenchmarkChanStorage(b *testing.B) {
+func BenchmarkTreeStorage(b *testing.B) {
 	b.StopTimer()
-	bs = storage.NewChanStorage()
+	bs = storage.NewTreeStorage()
 	categories := []string{"flight", "onlycategory"}
 
 	benchmarkStorage(b, categories)
 }
 
-func BenchmarkChanStorage2(b *testing.B) {
+func BenchmarkTreeStorageAny(b *testing.B) {
 	b.StopTimer()
-	bs = storage.NewChanStorage()
+	bs = storage.NewTreeStorage()
 
 	benchmarkStorage(b, nil)
 }
@@ -117,7 +117,7 @@ func BenchmarkSliceStorage(b *testing.B) {
 	benchmarkStorage(b, categories)
 }
 
-func BenchmarkSliceStorage2(b *testing.B) {
+func BenchmarkSliceStorageAny(b *testing.B) {
 	b.StopTimer()
 	bs = storage.NewSliceStorage()
 
